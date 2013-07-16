@@ -6,87 +6,46 @@ all: QR2.rb
 QR.scala: QR.rb
 	ruby QR.rb > QR.scala
 
-QR.scm: QR.scala
+QR.vala: QR.scala
 	scalac QR.scala
-	scala QR > QR.scm
+	scala QR | gosh | bash | gst | tclsh | ruby unlambda.rb /dev/stdin > QR.vala
 
-QR.bash: QR.scm
-	gosh QR.scm > QR.bash
-
-QR.st: QR.bash
-	bash QR.bash > QR.st
-
-QR.tcl: QR.st
-	gst QR.st > QR.tcl
-
-QR.unl: QR.tcl
-	tclsh QR.tcl > QR.unl
-
-QR.vala: QR.unl
-	ruby unlambda.rb QR.unl > QR.vala
-
-QR.v: QR.vala
+QRv: QR.vala
 	valac QR.vala
-	./QR > QR.v
+	./QR | iverilog -o QRv /dev/stdin
 
-QR.ws: QR.v
-	iverilog -o QR QR.v
-	./QR -vcd-none > QR.ws
-
-QR.adb: QR.ws
-	ruby whitespace.rb QR.ws > QR.adb
+QR.adb: QRv
+	./QRv -vcd-none | ruby whitespace.rb /dev/stdin > QR.adb
 
 QR.a68: QR.adb
 	gnatmake QR.adb
 	./QR > QR.a68
 
-QR.awk: QR.a68
-	a68g QR.a68 > QR.awk
+QRc: QR.a68
+	a68g QR.a68 | awk -f /dev/stdin | booi - | beef /dev/stdin | gcc -pipe -o QRc -xc -
 
-QR.boo: QR.awk
-	awk -f QR.awk > QR.boo
+QRcpp: QRc
+	./QRc | g++ -o QRcpp -xc++ -
 
-QR.bf: QR.boo
-	booi QR.boo > QR.bf
+QR.cs: QRcpp
+	./QRcpp > QR.cs
 
-QR.c: QR.bf
-	beef QR.bf > QR.c
+QRcs.exe: QR.cs
+	mcs -out:QRcs.exe QR.cs
 
-QR.cpp: QR.c
-	gcc -o QR QR.c
-	./QR > QR.cpp
+QRcob: QRcs.exe
+	mono QRcs.exe | clojure - | cobc -x -o QRcob /dev/stdin
 
-QR.cs: QR.cpp
-	g++ -o QR QR.cpp
-	./QR > QR.cs
+# While the latest CoffeeScript can _evaluate_ from stdin,
+# this one can't, so we compile to JS and evaluate that instead.
+QRf: QRcob
+	./QRcob | coffee -sc | node | clisp - | gforth /dev/stdin | gfortran -pipe -o QRf -xf77 -
 
-QR.clj: QR.cs
-	mcs QR.cs
-	mono QR.exe > QR.clj
+QRf90: QRf
+	./QRf | gfortran -pipe -o QRf90 -xf95 -
 
-QR.cob: QR.clj
-	clojure QR.clj > QR.cob
-
-QR.coffee: QR.cob
-	cobc -x QR.cob
-	./QR > QR.coffee
-
-QR.lisp: QR.coffee
-	coffee QR.coffee > QR.lisp
-
-QR.fs: QR.lisp
-	clisp QR.lisp > QR.fs
-
-QR.f: QR.fs
-	gforth QR.fs > QR.f
-
-QR.f90: QR.f
-	gfortran -o QR QR.f
-	./QR > QR.f90
-
-QR.go: QR.f90
-	gfortran -o QR QR.f90
-	./QR > QR.go
+QR.go: QRf90
+	./QRf90 > QR.go
 
 QR.groovy: QR.go
 	go run QR.go > QR.groovy
@@ -94,81 +53,38 @@ QR.groovy: QR.go
 QR.hs: QR.groovy
 	groovy QR.groovy > QR.hs
 
-QR.icn: QR.hs
-	runghc QR.hs > QR.icn
+QRicn: QR.hs
+	runghc QR.hs | icont -so QRicn -
 
-QR.i: QR.icn
-	icont -s QR.icn
-	./QR > QR.i
-
+QR.i: QRicn
+	./QRicn > QR.i
+   
 QR.j: QR.i
-	mv QR.c QR.c.bak
 	ick -b QR.i
-	mv QR.c.bak QR.c
 	./QR > QR.j
 
 QR.java: QR.j
 	jasmin QR.j
 	java QR > QR.java
 
-QR.ll: QR.java
+QRil.exe: QR.java
 	javac QR.java
-	java QR > QR.ll
+	java QR | llvm-as | lli | ucblogo /dev/stdin | lua | make -f - | ilasm -out:QRil.exe /dev/stdin
 
-QR.logo: QR.ll
-	llvm-as QR.ll
-	lli QR.bc > QR.logo
+QRm: QRil.exe
+	mono QRil.exe | nodejs | gcc -pipe -o QRm -xobjective-c -
 
-QR.lua: QR.logo
-	ucblogo QR.logo > QR.lua
-
-QR.makefile: QR.lua
-	lua QR.lua > QR.makefile
-
-QR.il: QR.makefile
-	make -f QR.makefile > QR.il
-
-QR.js: QR.il
-	ilasm QR.il
-	mono QR.exe > QR.js
-
-QR.m: QR.js
-	nodejs QR.js > QR.m
-
-QR.ml: QR.m
-	gcc -o QR QR.m
-	./QR > QR.ml
-
-QR.octave: QR.ml
-	ocaml QR.ml > QR.octave
-
-QR.pasm: QR.octave
-	octave -qf QR.octave > QR.pasm
+QR.pasm: QRm
+	./QRm | ocaml /dev/stdin | octave -qf > QR.pasm
 
 QR.pas: QR.pasm
 	parrot QR.pasm > QR.pas
 
-QR.pl: QR.pas
-	fpc QR.pas
-	./QR > QR.pl
+QRpas: QR.pas
+	fpc -oQRpas QR.pas
 
-QR.php: QR.pl
-	perl QR.pl > QR.php
+QR.pike: QRpas
+	./QRpas | perl | php > QR.pike
 
-QR.pike: QR.php
-	php QR.php > QR.pike
-
-QR.prolog: QR.pike
-	pike QR.pike > QR.prolog
-
-QR.py: QR.prolog
-	swipl -q -t qr -f QR.prolog > QR.py
-
-QR.R: QR.py
-	python QR.py > QR.R
-
-QR.rexx: QR.R
-	R --slave < QR.R > QR.rexx
-
-QR2.rb: QR.rexx
-	rexx ./QR.rexx > QR2.rb
+QR2.rb: QR.pike
+	pike QR.pike | swipl -q -t qr -f /dev/stdin | python | R --slave | rexx > QR2.rb
