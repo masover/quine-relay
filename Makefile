@@ -10,9 +10,11 @@ QR.vala: QR.scala
 	scalac QR.scala
 	scala QR | gosh | bash | gst | tclsh | ruby unlambda.rb /dev/stdin > QR.vala
 
-QRv: QR.vala
-	valac QR.vala
-	./QR | iverilog -o QRv /dev/stdin
+QRvala: QR.vala
+	valac -o QRvala QR.vala
+
+QRv: QRvala
+	./QRvala | iverilog -o QRv /dev/stdin
 
 QR.adb: QRv
 	./QRv -vcd-none | ruby whitespace.rb /dev/stdin > QR.adb
